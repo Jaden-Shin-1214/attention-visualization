@@ -6,7 +6,9 @@ const COLORS = { q:0x30d158, k:0xff9f0a, v:0xbf5af2 };   // Q green · K orange 
 const DIM = 0x2b2f3a;
 
 const state = { view:'attention', layer:0, head:0, selQ:null };
-let meta, attn, N, H, L, T0;
+let meta, attn, N, H, L, T0, NPT;
+// label a token index: prefix tokens are CLS + registers, the rest are patches
+function tokLabel(i){ return i<NPT ? (i===0 ? 'CLS' : 'REG'+i) : 'patch '+(i-NPT); }
 const BG = new THREE.Color(0x12141d);   // dim-toward colour (keeps hue, just fades)
 
 // ---------- load a dataset ----------
@@ -16,7 +18,8 @@ async function fetchDataset(name){
   const buf = await (await fetch(`${DATA}/${meta.attn.file}`)).arrayBuffer();
   attn = new Uint8Array(buf);
   N = meta.n_tokens; H = meta.n_heads; L = meta.n_layers;
-  T0 = 0;            // CLS (index 0) is a normal node, same size, selectable as a query
+  T0 = 0;            // all tokens (prefix + patches) are normal nodes
+  NPT = meta.n_prefix ?? (meta.has_cls ? 1 : 0);   // # prefix tokens before patches
 }
 const attnRow = (layer,head,q) => {
   const base = ((layer*H+head)*N + q)*N;
@@ -139,7 +142,7 @@ function select(q){
   colorNodes(keep);
   updateSelInfo(q,row,order);
   const qs=document.getElementById('query');           // keep the Query slider in sync
-  qs.value=q; document.getElementById('query-val').textContent = q===0?'CLS':q;
+  qs.value=q; document.getElementById('query-val').textContent = q<NPT ? tokLabel(q) : (q-NPT);
   drawMap();
   drawQueryHeat(q);
   drawCurImg();
@@ -229,8 +232,8 @@ function drawCurImg(){
   cictx.clearRect(0,0,S,S);
   if(inputImg.complete && inputImg.naturalWidth) cictx.drawImage(inputImg,0,0,S,S);
   const q=state.selQ;
-  if(q!=null && q>=1){                       // CLS (token 0) has no patch location
-    const grid=meta.patch_grid, cell=S/grid, p=q-1;
+  if(q!=null && q>=NPT){                      // prefix tokens have no patch location
+    const grid=meta.patch_grid, cell=S/grid, p=q-NPT;
     const x=(p%grid)*cell, y=Math.floor(p/grid)*cell;
     cictx.lineWidth=3; cictx.strokeStyle='#ff3b30';
     cictx.strokeRect(x+1.5,y+1.5,cell-3,cell-3);
@@ -241,14 +244,14 @@ function drawQueryHeat(q){
   if(qheat.width!==grid){ qheat.width=grid; qheat.height=grid; }
   const base=((state.layer*H+state.head)*N+q)*N;
   let mx=1e-6;                                   // normalize per query for visibility
-  for(let p=0;p<grid*grid;p++){ const w=attn[base+1+p]/255; if(w>mx) mx=w; }
+  for(let p=0;p<grid*grid;p++){ const w=attn[base+NPT+p]/255; if(w>mx) mx=w; }
   const img=qhctx.createImageData(grid,grid);
-  for(let p=0;p<grid*grid;p++){                  // token 0 = CLS, patches are tokens 1..196
-    const [r,g,b]=cmap((attn[base+1+p]/255)/mx);
+  for(let p=0;p<grid*grid;p++){                  // patches are tokens NPT..NPT+grid^2-1
+    const [r,g,b]=cmap((attn[base+NPT+p]/255)/mx);
     const o=p*4; img.data[o]=r; img.data[o+1]=g; img.data[o+2]=b; img.data[o+3]=255;
   }
   qhctx.putImageData(img,0,0);
-  document.getElementById('qheat-cap').textContent = `${q===0?'CLS':'patch '+q} → patches`;
+  document.getElementById('qheat-cap').textContent = `${tokLabel(q)} → patches`;
 }
 map.addEventListener('click', e=>{
   const r=map.getBoundingClientRect();
@@ -258,9 +261,9 @@ map.addEventListener('click', e=>{
 
 function updateSelInfo(q,row,order){
   const top=order.slice(0,6);
-  let html=`<div style="margin-bottom:6px">query <b>${q===0?'CLS':'patch '+q}</b> · top keys:</div>`;
+  let html=`<div style="margin-bottom:6px">query <b>${tokLabel(q)}</b> · top keys:</div>`;
   for(const k of top){
-    html+=`<div class="row"><span>${k===0?'CLS':'patch '+k}</span><b>${row[k].toFixed(3)}</b></div>`;
+    html+=`<div class="row"><span>${tokLabel(k)}</span><b>${row[k].toFixed(3)}</b></div>`;
   }
   document.getElementById('selinfo').className='selinfo';
   document.getElementById('selinfo').innerHTML=html;
@@ -348,6 +351,26 @@ function buildSampleStrip(samples){
     box.appendChild(d);
   }
 }
+function buildLayerViz(samples, nLayers){
+  const box=document.getElementById('lv-grid');
+  box.style.gridTemplateColumns=`132px repeat(${nLayers}, 42px)`;
+  box.innerHTML='';
+  const hd=(t)=>{ const e=document.createElement('div'); e.className='lv-hd'; e.textContent=t; return e; };
+  box.appendChild(hd(''));                                  // corner
+  for(let Lr=0;Lr<nLayers;Lr++) box.appendChild(hd('L'+Lr));
+  for(const s of samples){
+    const lab=document.createElement('div'); lab.className='lv-row-label';
+    lab.innerHTML=`<img src="data/${s.name}/image.jpg" alt=""><span>${s.label}</span>`;
+    box.appendChild(lab);
+    for(let Lr=0;Lr<nLayers;Lr++){
+      const img=document.createElement('img'); img.className='lv-cell'; loading_lazy(img);
+      img.src=`data/${s.name}/layers/L${String(Lr).padStart(2,'0')}.png`;
+      img.title=`${s.label} · L${Lr}`;
+      box.appendChild(img);
+    }
+  }
+}
+function loading_lazy(img){ img.loading='lazy'; }
 
 (async ()=>{
   const u=new URLSearchParams(location.search);
@@ -358,6 +381,7 @@ function buildSampleStrip(samples){
   applyDataset(u.has('q') ? +u.get('q') : 0);
   document.querySelectorAll('.sample').forEach(el=>
     el.classList.toggle('active', el.dataset.name===first));
+  buildLayerViz(samples, L);     // L = meta.n_layers (24)
   loop();
 })().catch(err=>{
   if(!dbg.isConnected) document.body.appendChild(dbg);

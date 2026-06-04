@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Attention Visualization · ViT Playground</title>
-<link rel="stylesheet" href="style.css?v=9">
+<link rel="stylesheet" href="style.css?v=10">
 <script type="importmap">
 { "imports": { "three": "./vendor/three.module.js" } }
 </script>
@@ -19,27 +19,32 @@
     <p class="lede">A Vision Transformer turns every patch into a <em>query</em>, a <em>key</em>, and a
        <em>value</em>. This playground lets you watch <em>how those Q · K · V spaces take shape</em> —
        layer by layer, head by head — and how a query's attention flows to its keys and on to their values.</p>
-    <p class="sub">ViT-B/16 · 12 layers · 12 heads · 197 tokens (1 CLS + 196 patches)</p>
+    <p class="sub">DINOv3-L · 24 layers · 16 heads · 261 tokens (5 prefix + 256 patches)</p>
     <a class="scrollcue" href="#explore">explore <span>↓</span></a>
   </div>
 </section>
 
 <main class="stage" id="explore">
+  <div class="sec-head">
+    <h2>Attention Visualization</h2>
+    <p class="sec-desc">Pick a query token and watch its keys light up in the per-(layer, head) Q·K·V space,
+       with the full attention map, a per-query patch heatmap, and the query patch marked on the image.</p>
+  </div>
   <div class="samples" id="samples"></div>
   <div class="toolbar">
     <div class="ctl">
       <span class="label">Layer</span>
-      <input id="layer" type="range" min="0" max="11" value="0" step="1">
-      <span id="layer-val" class="val">6</span>
+      <input id="layer" type="range" min="0" max="23" value="0" step="1">
+      <span id="layer-val" class="val">0</span>
     </div>
     <div class="ctl">
       <span class="label">Head</span>
-      <input id="head" type="range" min="0" max="11" value="0" step="1">
+      <input id="head" type="range" min="0" max="15" value="0" step="1">
       <span id="head-val" class="val">0</span>
     </div>
     <div class="ctl query-ctl">
       <span class="label">Query</span>
-      <input id="query" type="range" min="0" max="196" value="0" step="1">
+      <input id="query" type="range" min="0" max="260" value="0" step="1">
       <span id="query-val" class="val">—</span>
     </div>
   </div>
@@ -85,15 +90,26 @@
   </div>
 </main>
 
+<section class="stage layerviz" id="layerviz">
+  <div class="sec-head">
+    <h2>Layer Visualization</h2>
+    <p class="sec-desc">Each layer's MLP output (the patch features after every block), projected to PCA-RGB
+       per image. Reading them across depth reveals what role each layer plays — early layers capture
+       position and low-level texture, deeper layers organize into object parts and semantics.
+       Rows = samples, columns = layers (0 → 23).</p>
+  </div>
+  <div class="lv-scroll"><div class="lv-grid" id="lv-grid"></div></div>
+</section>
+
 <footer class="foot">
   <span>Playground by <a href="https://jaden-shin-1214.github.io/" target="_blank" rel="noopener">Youngjin Shin</a> ·
         <a href="https://github.com/Jaden-Shin-1214/attention-visualization" target="_blank" rel="noopener">source</a></span>
-  <span>Model: <a href="https://arxiv.org/abs/2010.11929" target="_blank" rel="noopener">ViT — Dosovitskiy et al. (2021)</a> ·
+  <span>Model: <a href="https://github.com/facebookresearch/dinov3" target="_blank" rel="noopener">DINOv3 — Siméoni et al. (2025)</a> ·
         weights via <a href="https://github.com/huggingface/pytorch-image-models" target="_blank" rel="noopener">timm</a> ·
         built with <a href="https://threejs.org" target="_blank" rel="noopener">three.js</a></span>
   <span>Sample images from the <a href="https://github.com/EliSchwartz/imagenet-sample-images" target="_blank" rel="noopener">ImageNet sample set</a>.</span>
 </footer>
 
-<script type="module" src="app.js?v=9"></script>
+<script type="module" src="app.js?v=10"></script>
 </body>
 </html>
