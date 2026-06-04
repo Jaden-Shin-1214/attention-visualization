@@ -99,6 +99,13 @@ def main():
             for name, arr in (("q", q), ("k", k), ("v", v)):
                 attn_view[name][h][i] = np.round(pca_tr(arr.astype(np.float64), mu, comps), 3).tolist()
 
+    # ---- layer-cluster view: one global PCA (1024->3d) over ALL layers'
+    #      block-output patch tokens, so every layer's cluster shares one space ----
+    allp = np.concatenate([blkout[i][NPT:] for i in range(NB)], 0).astype(np.float64)  # (NB*P,1024)
+    mu_c, comps_c = pca_fit(allp, 3)
+    cluster_view = [np.round(pca_tr(blkout[i][NPT:].astype(np.float64), mu_c, comps_c), 3).tolist()
+                    for i in range(NB)]                  # [layer][patch] = [x,y,z]
+
     # ---- write ----
     outdir = os.path.join(args.out, args.name); os.makedirs(outdir, exist_ok=True)
     layerdir = os.path.join(outdir, "layers"); os.makedirs(layerdir, exist_ok=True)
@@ -124,6 +131,9 @@ def main():
     }
     with open(os.path.join(outdir, "meta.json"), "w") as f:
         json.dump(meta, f)
+    # separate, light cluster file (global PCA of every layer's MLP-output patches)
+    with open(os.path.join(outdir, "cluster.json"), "w") as f:
+        json.dump({"n_layers": NB, "n_patches": N - NPT, "coords": cluster_view}, f)
     mb = os.path.getsize(os.path.join(outdir, "meta.json")) / 1e6
     ab = os.path.getsize(os.path.join(outdir, "attn.bin")) / 1e6
     print(f"wrote {outdir}: meta {mb:.1f}MB  attn {ab:.1f}MB  layers {NB} pngs  (N={N}, grid={grid})")

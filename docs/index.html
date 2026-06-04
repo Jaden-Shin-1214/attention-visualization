@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Attention Visualization · ViT Playground</title>
-<link rel="stylesheet" href="style.css?v=16">
+<link rel="stylesheet" href="style.css?v=17">
 <script type="importmap">
 { "imports": { "three": "./vendor/three.module.js" } }
 </script>
@@ -124,6 +124,22 @@
   </div>
   <div class="samples" id="lv-samples"></div>
   <div class="lv-scroll"><div class="lv-deck" id="lv-grid"></div></div>
+
+  <div class="sec-head" style="margin-top:40px">
+    <div class="sec-top">
+      <span class="sec-kicker">03 — geometry</span>
+      <h2>Layer clusters in 3D</h2>
+    </div>
+    <div class="sec-rule"></div>
+    <div class="sec-body">
+      <p class="sec-desc">Every layer's MLP output (the 256 patch tokens after each block) is dropped into one
+         shared 3D space by a single PCA. Each layer forms its own cloud &mdash; click a layer to spotlight it
+         while the rest fade. Early layers stay tightly clustered; deeper layers spread out and reorganize.
+         (Uses the sample picked above.)</p>
+    </div>
+  </div>
+  <div class="cl-bar" id="cl-bar"><span class="cl-lab">Layer</span></div>
+  <div class="cl-wrap"><canvas id="cl-scene"></canvas><div id="cl-hint" class="cl-hint"></div></div>
 </section>
 
 <footer class="foot">
@@ -135,6 +151,6 @@
   <span>Sample images from the <a href="https://github.com/EliSchwartz/imagenet-sample-images" target="_blank" rel="noopener">ImageNet sample set</a>.</span>
 </footer>
 
-<script type="module" src="app.js?v=16"></script>
+<script type="module" src="app.js?v=17"></script>
 </body>
 </html>

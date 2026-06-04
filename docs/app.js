@@ -373,6 +373,7 @@ function renderLayerViz(name, nLayers){
   card(`data/${name}/image.jpg`, 'input', false);   // original first
   for(let Lr=0;Lr<nLayers;Lr++)
     card(`data/${name}/layers/L${String(Lr).padStart(2,'0')}.png`, 'L'+Lr, true);
+  loadClusters(name);                                // sync the 3D cluster view
 }
 
 (async ()=>{
@@ -384,11 +385,83 @@ function renderLayerViz(name, nLayers){
   applyDataset(u.has('q') ? +u.get('q') : 0);
   document.querySelectorAll('.sample').forEach(el=>
     el.classList.toggle('active', el.dataset.name===first));
-  buildLayerViz(samples, L);     // L = meta.n_layers (24)
+  initClusters();
+  buildLayerViz(samples, L);     // L = meta.n_layers (24); also triggers loadClusters
   loop();
 })().catch(err=>{
   if(!dbg.isConnected) document.body.appendChild(dbg);
   dbg.style.color='#f88'; dbg.textContent='ERROR: '+err.message+'\n'+(err.stack||'');
   console.error(err);
 });
+
+// ================= Layer clusters: all layers' MLP outputs in one 3D PCA space =================
+let clRenderer, clScene, clCamera, clControls, clMat, clPts, clGeo, clCol, clLayerOf, clNB, clBtns;
+let clSel = null;                                  // null = all layers, else layer index
+const CLBG = new THREE.Color(0x0e1018);
+function clCmap(t){ return new THREE.Color(0xff9f0a).lerp(new THREE.Color(0x30d158), t); }
+function initClusters(){
+  const cv = document.getElementById('cl-scene');
+  clRenderer = new THREE.WebGLRenderer({ canvas:cv, antialias:true, alpha:true });
+  clRenderer.setPixelRatio(Math.min(devicePixelRatio,2));
+  clScene = new THREE.Scene();
+  clCamera = new THREE.PerspectiveCamera(45,1,0.1,2000); clCamera.position.set(0,2,30);
+  clControls = new OrbitControls(clCamera, cv); clControls.enableDamping=true; clControls.dampingFactor=0.08;
+  const tcv=document.createElement('canvas'); tcv.width=tcv.height=64; const tg=tcv.getContext('2d');
+  tg.beginPath(); tg.arc(32,32,28,0,7); tg.fillStyle='#fff'; tg.fill();
+  clMat = new THREE.PointsMaterial({ size:0.6, sizeAttenuation:true, vertexColors:true,
+    map:new THREE.CanvasTexture(tcv), alphaTest:0.4, transparent:true });
+  (function loopC(){
+    if(clRenderer){
+      const w=cv.clientWidth,h=cv.clientHeight;
+      if(cv.width!==w*devicePixelRatio||cv.height!==h*devicePixelRatio){
+        clRenderer.setSize(w,h,false); clCamera.aspect=w/h; clCamera.updateProjectionMatrix(); }
+      clControls.update(); clRenderer.render(clScene,clCamera);
+    }
+    requestAnimationFrame(loopC);
+  })();
+}
+async function loadClusters(name){
+  const cl = await (await fetch(`data/${name}/cluster.json`)).json();
+  clNB = cl.n_layers; const P=cl.n_patches, coords=cl.coords;
+  let cx=0,cy=0,cz=0,nn=0; const ds=[];
+  for(let l=0;l<clNB;l++) for(let p=0;p<P;p++){ const q=coords[l][p]; cx+=q[0];cy+=q[1];cz+=q[2];nn++; }
+  cx/=nn;cy/=nn;cz/=nn;
+  for(let l=0;l<clNB;l++) for(let p=0;p<P;p++){ const q=coords[l][p];
+    ds.push(Math.hypot(q[0]-cx,q[1]-cy,q[2]-cz)); }
+  ds.sort((a,b)=>a-b); const s=15/(ds[Math.floor(ds.length*0.95)]||1);
+  const pos=new Float32Array(clNB*P*3); clLayerOf=new Int16Array(clNB*P); let k=0;
+  for(let l=0;l<clNB;l++) for(let p=0;p<P;p++){ const q=coords[l][p];
+    pos[k*3]=(q[0]-cx)*s; pos[k*3+1]=(q[1]-cy)*s; pos[k*3+2]=(q[2]-cz)*s; clLayerOf[k]=l; k++; }
+  if(clPts){ clScene.remove(clPts); clGeo.dispose(); }
+  clGeo=new THREE.BufferGeometry();
+  clGeo.setAttribute('position', new THREE.BufferAttribute(pos,3));
+  clCol=new Float32Array(clNB*P*3); clGeo.setAttribute('color', new THREE.BufferAttribute(clCol,3));
+  clPts=new THREE.Points(clGeo, clMat); clScene.add(clPts);
+  if(!clBtns) buildClButtons();
+  clRecolor();
+}
+function clRecolor(){
+  const c=new THREE.Color();
+  for(let i=0;i<clLayerOf.length;i++){
+    const l=clLayerOf[i]; c.copy(clCmap(l/(clNB-1)));
+    if(clSel!==null && l!==clSel) c.lerp(CLBG,0.9);
+    clCol[i*3]=c.r; clCol[i*3+1]=c.g; clCol[i*3+2]=c.b;
+  }
+  clGeo.attributes.color.needsUpdate=true;
+  document.getElementById('cl-hint').textContent =
+    clSel===null ? `all ${clNB} layers` : `layer ${clSel} highlighted`;
+}
+function buildClButtons(){
+  const bar=document.getElementById('cl-bar');
+  bar.querySelectorAll('button').forEach(b=>b.remove());
+  const mk=(txt,fn,cls)=>{ const b=document.createElement('button'); if(cls)b.className=cls;
+    b.textContent=txt; b.onclick=fn; bar.appendChild(b); return b; };
+  clBtns=[ mk('All',()=>{clSel=null;clSync();},'all') ];
+  for(let l=0;l<clNB;l++) clBtns.push(mk(l,()=>{clSel=l;clSync();}));
+  clSync();
+}
+function clSync(){
+  clBtns.forEach((b,i)=>b.classList.toggle('active',(i===0&&clSel===null)||(i-1===clSel)));
+  clRecolor();
+}
 
