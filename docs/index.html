@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Attention Visualization · ViT Playground</title>
-<link rel="stylesheet" href="style.css?v=19">
+<link rel="stylesheet" href="style.css?v=20">
 <script type="importmap">
 { "imports": { "three": "./vendor/three.module.js" } }
 </script>
@@ -37,10 +37,6 @@
          Q·K·V in 3D and trace a query to its keys and on to their values. Doing this makes one thing clear:
          every layer and every head learns its <em>own distinct projection</em> — and that is exactly what
          gives each one a different role, and why the attention map changes from one to the next.</p>
-      <figure class="sec-sample">
-        <img src="assets/attn_sample.png" alt="attention output sample">
-        <figcaption>A query lighting up its keys — and their values — in the Q·K·V space.</figcaption>
-      </figure>
     </div>
   </div>
   <div class="samples" id="samples"></div>
@@ -116,10 +112,6 @@
          <em>what each layer looks at changes layer by layer</em> — early layers latch onto position and
          low-level texture, deeper layers organize into object parts and semantics. Pick a sample below to
          see all 24 layers (left → right, top → bottom).</p>
-      <figure class="sec-sample">
-        <img src="assets/layer_sample.png" alt="layer PCA-RGB sample">
-        <figcaption>PCA-RGB of the same image at layers 1 · 6 · 11 · 17 · 23.</figcaption>
-      </figure>
     </div>
   </div>
   <div class="samples" id="lv-samples"></div>
@@ -135,6 +127,6 @@
   <span>Sample images from the <a href="https://github.com/EliSchwartz/imagenet-sample-images" target="_blank" rel="noopener">ImageNet sample set</a>.</span>
 </footer>
 
-<script type="module" src="app.js?v=19"></script>
+<script type="module" src="app.js?v=20"></script>
 </body>
 </html>
