@@ -352,25 +352,28 @@ function buildSampleStrip(samples){
   }
 }
 function buildLayerViz(samples, nLayers){
-  const box=document.getElementById('lv-grid');
-  box.style.gridTemplateColumns=`132px repeat(${nLayers}, 42px)`;
-  box.innerHTML='';
-  const hd=(t)=>{ const e=document.createElement('div'); e.className='lv-hd'; e.textContent=t; return e; };
-  box.appendChild(hd(''));                                  // corner
-  for(let Lr=0;Lr<nLayers;Lr++) box.appendChild(hd('L'+Lr));
+  const sel=document.getElementById('lv-samples'); sel.innerHTML='';
   for(const s of samples){
-    const lab=document.createElement('div'); lab.className='lv-row-label';
-    lab.innerHTML=`<img src="data/${s.name}/image.jpg" alt=""><span>${s.label}</span>`;
-    box.appendChild(lab);
-    for(let Lr=0;Lr<nLayers;Lr++){
-      const img=document.createElement('img'); img.className='lv-cell'; loading_lazy(img);
-      img.src=`data/${s.name}/layers/L${String(Lr).padStart(2,'0')}.png`;
-      img.title=`${s.label} · L${Lr}`;
-      box.appendChild(img);
-    }
+    const b=document.createElement('button'); b.className='sample'; b.dataset.lv=s.name;
+    b.innerHTML=`<img src="data/${s.name}/image.jpg" alt="${s.label}"><span>${s.label}</span>`;
+    b.onclick=()=>renderLayerViz(s.name, nLayers);
+    sel.appendChild(b);
   }
+  renderLayerViz(samples[0].name, nLayers);
 }
-function loading_lazy(img){ img.loading='lazy'; }
+function renderLayerViz(name, nLayers){
+  document.querySelectorAll('#lv-samples .sample').forEach(el=>
+    el.classList.toggle('active', el.dataset.lv===name));
+  const box=document.getElementById('lv-grid'); box.innerHTML='';
+  const card=(src,tag,pca)=>{
+    const c=document.createElement('div'); c.className='lv-card'+(pca?' pca':'');
+    c.innerHTML=`<img src="${src}" alt="${tag}"><span class="lv-tag">${tag}</span>`;
+    box.appendChild(c);
+  };
+  card(`data/${name}/image.jpg`, 'input', false);   // original first
+  for(let Lr=0;Lr<nLayers;Lr++)
+    card(`data/${name}/layers/L${String(Lr).padStart(2,'0')}.png`, 'L'+Lr, true);
+}
 
 (async ()=>{
   const u=new URLSearchParams(location.search);

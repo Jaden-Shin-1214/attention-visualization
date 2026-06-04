@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Attention Visualization · ViT Playground</title>
-<link rel="stylesheet" href="style.css?v=10">
+<link rel="stylesheet" href="style.css?v=13">
 <script type="importmap">
 { "imports": { "three": "./vendor/three.module.js" } }
 </script>
@@ -26,12 +26,22 @@
 
 <main class="stage" id="explore">
   <div class="sec-head">
-    <h2>Attention Visualization</h2>
-    <p class="sec-desc">We wanted to see <em>how</em> each token's query, key, and value get projected into their
-       own spaces, and how that geometry ties back to attention. So we lay out the per-(layer, head) Q·K·V in
-       3D and trace a query to its keys and on to their values. Doing this makes one thing clear: every layer
-       and every head learns its <em>own distinct projection</em> — and that is exactly what gives each one a
-       different role, and why the attention map changes from one to the next.</p>
+    <div class="sec-top">
+      <span class="sec-kicker">01 — interactive</span>
+      <h2>Attention Visualization</h2>
+    </div>
+    <div class="sec-rule"></div>
+    <div class="sec-body">
+      <p class="sec-desc">We wanted to see <em>how</em> each token's query, key, and value get projected into
+         their own spaces, and how that geometry ties back to attention. So we lay out the per-(layer, head)
+         Q·K·V in 3D and trace a query to its keys and on to their values. Doing this makes one thing clear:
+         every layer and every head learns its <em>own distinct projection</em> — and that is exactly what
+         gives each one a different role, and why the attention map changes from one to the next.</p>
+      <figure class="sec-sample">
+        <img src="assets/attn_sample.png" alt="attention output sample">
+        <figcaption>A query lighting up its keys — and their values — in the Q·K·V space.</figcaption>
+      </figure>
+    </div>
   </div>
   <div class="samples" id="samples"></div>
   <div class="toolbar">
@@ -95,13 +105,25 @@
 
 <section class="stage layerviz" id="layerviz">
   <div class="sec-head">
-    <h2>Layer Visualization</h2>
-    <p class="sec-desc">To probe what each layer itself is doing, we additionally took the features after every
-       block's MLP and projected them to PCA-RGB. Reading them across depth, we can see that <em>what each
-       layer looks at changes layer by layer</em> — early layers latch onto position and low-level texture,
-       deeper layers organize into object parts and semantics. Rows = samples, columns = layers (0 → 23).</p>
+    <div class="sec-top">
+      <span class="sec-kicker">02 — features</span>
+      <h2>Layer Visualization</h2>
+    </div>
+    <div class="sec-rule"></div>
+    <div class="sec-body">
+      <p class="sec-desc">To probe what each layer itself is doing, we additionally took the features after
+         every block's MLP and projected them to PCA-RGB. Reading them across depth, we can see that
+         <em>what each layer looks at changes layer by layer</em> — early layers latch onto position and
+         low-level texture, deeper layers organize into object parts and semantics. Pick a sample below to
+         see all 24 layers (left → right, top → bottom).</p>
+      <figure class="sec-sample">
+        <img src="assets/layer_sample.png" alt="layer PCA-RGB sample">
+        <figcaption>PCA-RGB of the same image at layers 1 · 6 · 11 · 17 · 23.</figcaption>
+      </figure>
+    </div>
   </div>
-  <div class="lv-scroll"><div class="lv-grid" id="lv-grid"></div></div>
+  <div class="samples" id="lv-samples"></div>
+  <div class="lv-scroll"><div class="lv-deck" id="lv-grid"></div></div>
 </section>
 
 <footer class="foot">
@@ -113,6 +135,6 @@
   <span>Sample images from the <a href="https://github.com/EliSchwartz/imagenet-sample-images" target="_blank" rel="noopener">ImageNet sample set</a>.</span>
 </footer>
 
-<script type="module" src="app.js?v=10"></script>
+<script type="module" src="app.js?v=13"></script>
 </body>
 </html>
