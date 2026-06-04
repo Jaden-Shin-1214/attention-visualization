@@ -27,8 +27,11 @@
 <main class="stage" id="explore">
   <div class="sec-head">
     <h2>Attention Visualization</h2>
-    <p class="sec-desc">Pick a query token and watch its keys light up in the per-(layer, head) Q·K·V space,
-       with the full attention map, a per-query patch heatmap, and the query patch marked on the image.</p>
+    <p class="sec-desc">We wanted to see <em>how</em> each token's query, key, and value get projected into their
+       own spaces, and how that geometry ties back to attention. So we lay out the per-(layer, head) Q·K·V in
+       3D and trace a query to its keys and on to their values. Doing this makes one thing clear: every layer
+       and every head learns its <em>own distinct projection</em> — and that is exactly what gives each one a
+       different role, and why the attention map changes from one to the next.</p>
   </div>
   <div class="samples" id="samples"></div>
   <div class="toolbar">
@@ -93,10 +96,10 @@
 <section class="stage layerviz" id="layerviz">
   <div class="sec-head">
     <h2>Layer Visualization</h2>
-    <p class="sec-desc">Each layer's MLP output (the patch features after every block), projected to PCA-RGB
-       per image. Reading them across depth reveals what role each layer plays — early layers capture
-       position and low-level texture, deeper layers organize into object parts and semantics.
-       Rows = samples, columns = layers (0 → 23).</p>
+    <p class="sec-desc">To probe what each layer itself is doing, we additionally took the features after every
+       block's MLP and projected them to PCA-RGB. Reading them across depth, we can see that <em>what each
+       layer looks at changes layer by layer</em> — early layers latch onto position and low-level texture,
+       deeper layers organize into object parts and semantics. Rows = samples, columns = layers (0 → 23).</p>
   </div>
   <div class="lv-scroll"><div class="lv-grid" id="lv-grid"></div></div>
 </section>
