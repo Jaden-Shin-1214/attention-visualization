@@ -1,0 +1,9 @@
+[
+  {"name":"dog","label":"Dog"},
+  {"name":"cat","label":"Cat"},
+  {"name":"eagle","label":"Eagle"},
+  {"name":"zebra","label":"Zebra"},
+  {"name":"car","label":"Sports car"},
+  {"name":"coffee","label":"Coffee mug"},
+  {"name":"daisy","label":"Daisy"}
+]
